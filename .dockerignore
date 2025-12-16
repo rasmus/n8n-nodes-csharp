@@ -1,0 +1,7 @@
+.git
+**/.git
+**/node_modules
+**/bin
+**/obj
+**/dist
+**/.DS_Store

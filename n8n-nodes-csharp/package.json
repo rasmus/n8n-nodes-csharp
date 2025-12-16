@@ -1,0 +1,36 @@
+{
+  "name": "@rasmus/n8n-nodes-csharp",
+  "version": "0.1.0",
+  "description": "n8n community node: C# Code",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*",
+    "runner/**/*"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/copy-assets.mjs",
+    "dev": "npm run build -- --watch",
+    "test": "npm run build && node --test test/**/*.test.js",
+    "clean": "rm -rf dist"
+  },
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "nodes": [
+      "dist/nodes/CSharpCode/CSharpCode.node.js"
+    ]
+  },
+  "overrides": {
+    "form-data": "^4.0.4"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "n8n-workflow": "^1.0.0",
+    "typescript": "^5.0.0"
+  }
+}
+

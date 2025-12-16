@@ -1,0 +1,80 @@
+name: Pipeline
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: Version string used for tagging build artifacts
+        required: true
+        type: string
+      doRelease:
+        description: Whether to publish release artifacts to GitHub Packages
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: n8n-nodes-csharp/package-lock.json
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Build runner
+        run: dotnet build runner/N8n.CSharpRunner -c Release
+
+      - name: Publish runner into npm package
+        run: dotnet publish runner/N8n.CSharpRunner -c Release -o n8n-nodes-csharp/runner
+
+      - name: Test runner
+        run: dotnet test runner/N8n.CSharpRunner.Tests -c Release
+
+      - name: Build node package
+        working-directory: n8n-nodes-csharp
+        run: |
+          npm ci
+          npm run build
+
+      - name: Test node package
+        working-directory: n8n-nodes-csharp
+        run: npm test
+
+      - name: Build Docker image (n8n + C#)
+        run: |
+          docker build \
+            -f Dockerfile.n8n-csharp \
+            -t n8n-csharp-ci:local \
+            .
+
+      - name: Setup Node.js (GitHub Packages)
+        if: inputs.doRelease
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://npm.pkg.github.com
+          scope: '@${{ github.repository_owner }}'
+          always-auth: true
+
+      - name: Set npm package version
+        if: inputs.doRelease
+        working-directory: n8n-nodes-csharp
+        run: npm version --no-git-tag-version "${{ inputs.version }}"
+
+      - name: Publish npm package to GitHub Packages
+        if: inputs.doRelease
+        working-directory: n8n-nodes-csharp
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm publish

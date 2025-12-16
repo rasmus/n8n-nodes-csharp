@@ -1,0 +1,21 @@
+services:
+  n8n:
+    build:
+      context: .
+      dockerfile: Dockerfile.n8n-csharp
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=http://localhost:5678/
+      - N8N_CUSTOM_EXTENSIONS=/opt/n8n-custom
+      - N8N_CSHARP_RUNNER_PATH=/opt/n8n-custom/n8n-nodes-csharp/runner/N8n.CSharpRunner.dll
+      # For local dev only. Change for any real environment.
+      - N8N_ENCRYPTION_KEY=local-dev-only-change-me
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+volumes:
+  n8n_data:

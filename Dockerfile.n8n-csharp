@@ -1,0 +1,48 @@
+# Multi-stage build so `docker compose up --build` works end-to-end.
+
+FROM node:22-slim AS node-build
+WORKDIR /work/n8n-nodes-csharp
+COPY n8n-nodes-csharp/package.json n8n-nodes-csharp/package-lock.json ./
+RUN npm ci
+COPY n8n-nodes-csharp/ ./
+RUN npm run build
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS dotnet-build
+WORKDIR /work
+COPY runner/ ./runner/
+RUN dotnet publish runner/N8n.CSharpRunner -c Release -o /out/runner
+
+FROM mcr.microsoft.com/dotnet/runtime:8.0-alpine AS dotnet-runtime
+
+FROM n8nio/n8n:latest
+
+# Copy dotnet runtime into n8n image (avoids distro-specific apt steps)
+USER root
+COPY --from=dotnet-runtime /usr/share/dotnet /usr/share/dotnet
+ENV DOTNET_ROOT=/usr/share/dotnet
+ENV PATH=$PATH:/usr/share/dotnet
+
+# Some login shells or base-image init scripts may reset PATH.
+# Provide a stable location so `spawn("dotnet", ...)` always works.
+RUN ln -sf /usr/share/dotnet/dotnet /usr/bin/dotnet
+
+# n8nio/n8n:latest is Alpine-based, so use apk.
+# .NET on Linux requires ICU for globalization unless DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1.
+RUN apk add --no-cache icu-libs
+
+# Copy built node package (dist + metadata)
+WORKDIR /opt/n8n-custom/n8n-nodes-csharp
+COPY --from=node-build /work/n8n-nodes-csharp/package.json ./
+COPY --from=node-build /work/n8n-nodes-csharp/README.md ./
+COPY --from=node-build /work/n8n-nodes-csharp/dist ./dist
+
+# Copy published runner artifacts into the node package
+COPY --from=dotnet-build /out/runner ./runner
+
+RUN chown -R node:node /opt/n8n-custom
+
+ENV N8N_CUSTOM_EXTENSIONS=/opt/n8n-custom
+ENV N8N_CSHARP_RUNNER_PATH=/opt/n8n-custom/n8n-nodes-csharp/runner/N8n.CSharpRunner.dll
+
+USER node
+

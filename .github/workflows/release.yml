@@ -1,0 +1,48 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - release
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read version from package.json
+        id: version
+        run: |
+          VERSION=$(node -p "require('./n8n-nodes-csharp/package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Verify tag matches version
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          TAG="v$VERSION"
+          echo "Expecting git tag '$TAG' on HEAD."
+
+          if ! git tag --points-at HEAD | grep -qx "$TAG"; then
+            echo "::error::Release requires a git tag '$TAG' pointing at the current commit on branch 'release'."
+            echo "::error::Create the tag and push it (for example: git tag -a '$TAG' -m '$TAG' && git push --tags)."
+            echo "Tags found on HEAD:" 
+            git tag --points-at HEAD || true
+            exit 1
+          fi
+
+  pipeline:
+    needs: prepare
+    uses: ./.github/workflows/pipeline.yml
+    with:
+      version: ${{ needs.prepare.outputs.version }}
+      doRelease: true
