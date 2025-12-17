@@ -70,7 +70,7 @@ jobs:
       - name: Set npm package version
         if: inputs.doRelease
         working-directory: n8n-nodes-csharp
-        run: npm version --no-git-tag-version "${{ inputs.version }}"
+        run: npm version --no-git-tag-version --allow-same-version "${{ inputs.version }}"
 
       - name: Publish npm package to GitHub Packages
         if: inputs.doRelease

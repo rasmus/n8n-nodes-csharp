@@ -1,6 +1,6 @@
 {
   "name": "@rasmus/n8n-nodes-csharp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "n8n community node: C# Code",
   "license": "MIT",
   "main": "dist/index.js",
