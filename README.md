@@ -1,8 +1,6 @@
 # n8n-nodes-csharp — C# Code node for n8n
 
-Run C# inside n8n workflows, similar to n8n’s built-in Code nodes.
-
-This is intended for **self-hosted** n8n (Docker). The node executes your script in a separate `.NET` runner process and exchanges data as JSON over stdin/stdout.
+Run C# inside n8n workflows, similar to N8N’s built-in Code nodes.
 
 ## Quick start (Docker)
 

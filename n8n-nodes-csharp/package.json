@@ -1,7 +1,17 @@
 {
-  "name": "@rasmus/n8n-nodes-csharp",
+  "name": "@madoere/n8n-nodes-csharp",
   "version": "0.1.1",
   "description": "n8n community node: C# Code",
+  "homepage": "https://github.com/rasmus/n8n-nodes-csharp",
+  "keywords": [
+    "n8n-nodes",
+    "n8n-community-node",
+    "n8n-community-node-package",
+    "n8n-node",
+    "csharp",
+    "c#",
+    "code"
+  ],
   "license": "MIT",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
