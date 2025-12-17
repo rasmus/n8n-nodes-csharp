@@ -12,23 +12,29 @@ WORKDIR /work
 COPY runner/ ./runner/
 RUN dotnet publish runner/N8n.CSharpRunner -c Release -o /out/runner
 
-FROM mcr.microsoft.com/dotnet/runtime:8.0-alpine AS dotnet-runtime
-
 FROM n8nio/n8n:latest
 
-# Copy dotnet runtime into n8n image (avoids distro-specific apt steps)
 USER root
-COPY --from=dotnet-runtime /usr/share/dotnet /usr/share/dotnet
+# Install .NET runtime directly on Alpine (no cross-image copying).
+# Uses Microsoft's supported installer script for Linux/musl.
 ENV DOTNET_ROOT=/usr/share/dotnet
-ENV PATH=$PATH:/usr/share/dotnet
-
-# Some login shells or base-image init scripts may reset PATH.
-# Provide a stable location so `spawn("dotnet", ...)` always works.
-RUN ln -sf /usr/share/dotnet/dotnet /usr/bin/dotnet
 
 # n8nio/n8n:latest is Alpine-based, so use apk.
 # .NET on Linux requires ICU for globalization unless DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1.
-RUN apk add --no-cache icu-libs
+RUN apk add --no-cache \
+		ca-certificates \
+		icu-libs \
+		libgcc \
+		libstdc++ \
+	&& apk add --no-cache --virtual .dotnet-install-deps \
+		bash \
+		curl \
+	&& update-ca-certificates \
+	&& curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh \
+	&& bash /tmp/dotnet-install.sh --channel 8.0 --runtime dotnet --install-dir /usr/share/dotnet --no-path \
+	&& ln -sf /usr/share/dotnet/dotnet /usr/bin/dotnet \
+	&& rm -f /tmp/dotnet-install.sh \
+	&& apk del --no-network .dotnet-install-deps
 
 # Copy built node package (dist + metadata)
 WORKDIR /opt/n8n-custom/n8n-nodes-csharp
