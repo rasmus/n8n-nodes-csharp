@@ -90,6 +90,70 @@ public class RunnerSmokeTests
         Assert.Contains("compilation", response.Error?.Message ?? string.Empty, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public async Task Header_Using_Directive_Adds_Import()
+    {
+        var request = new
+        {
+            mode = "allItems",
+            items = new object[] { new { a = 1 } },
+            code = """
+
+/* block comment */
+/// xml doc comment (ignored)
+// some normal comment
+#nullable enable
+//   using   System.Text ;
+
+var sb = new StringBuilder();
+return new { ok = sb != null };
+""",
+        };
+
+        var response = await RunRunnerAsync(request);
+        Assert.True(response.Ok);
+        Assert.Single(response.Items);
+        Assert.True(response.Items[0].GetProperty("ok").GetBoolean());
+    }
+
+    [Fact]
+    public async Task Invalid_Header_Using_Directive_Returns_Ok_False()
+    {
+        var request = new
+        {
+            mode = "allItems",
+            items = new object[] { new { a = 1 } },
+            code = """
+// using System..Text
+return Items;
+""",
+        };
+
+        var response = await RunRunnerAsync(request);
+        Assert.False(response.Ok);
+        Assert.Contains("Invalid using directive", response.Error?.Message ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Header_Using_Directive_Is_Not_Parsed_After_Code_Starts()
+    {
+        var request = new
+        {
+            mode = "allItems",
+            items = new object[] { new { a = 1 } },
+            code = """
+var x = 1;
+// using System.Text
+var sb = new StringBuilder();
+return new { ok = true };
+""",
+        };
+
+        var response = await RunRunnerAsync(request);
+        Assert.False(response.Ok);
+        Assert.Contains("compilation", response.Error?.Message ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static async Task<RunnerResponse> RunRunnerAsync(object request)
     {
         var repoRoot = FindRepoRoot();
