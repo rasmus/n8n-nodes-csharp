@@ -2,6 +2,17 @@
 
 Run C# inside n8n workflows, similar to N8N’s built-in Code nodes.
 
+## Security / sandboxing
+
+This node executes **user-provided C# code with no sandboxing**.
+
+Treat access to this node as equivalent to granting arbitrary code execution on the machine/container running n8n:
+
+- The script can read/write files accessible to the n8n process, call the network, and consume CPU/memory.
+- There are no built-in isolation guarantees, permissions, or resource limits beyond what your OS/container provides.
+
+Only use this node in trusted environments (trusted workflows + trusted users), and rely on external isolation/hardening (separate instance, container/VM boundaries, least-privilege filesystem/networking, etc.).
+
 ## Quick start (Docker)
 
 Build and start n8n with the C# node installed:
