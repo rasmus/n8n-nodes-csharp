@@ -63,6 +63,16 @@ internal static class Program
                 return 0;
             }
 
+            if (!TryExtractHeaderUsingDirectives(request.Code, out var headerImports, out var directiveError))
+            {
+                await WriteResponseAsync(new RunnerResponse(
+                    Ok: false,
+                    Items: Array.Empty<JsonNode?>(),
+                    Error: directiveError
+                ));
+                return 0;
+            }
+
             var mode = request.Mode?.Trim() ?? "allItems";
             var itemNodes = (request.Items ?? Array.Empty<JsonElement>())
                 .Select(e => JsonNode.Parse(e.GetRawText()))
@@ -70,19 +80,25 @@ internal static class Program
 
             var globalsItems = new JsonArray(itemNodes);
 
+            var defaultImports = new[]
+            {
+                "System",
+                "System.Linq",
+                "System.Collections.Generic",
+                "System.Text.Json",
+                "System.Text.Json.Nodes",
+                "N8n.CSharpRunner",
+            };
+
+            var mergedImports = MergeImports(defaultImports, headerImports);
+
             var scriptOptions = ScriptOptions.Default
                 .AddReferences(
                     typeof(object).Assembly,
                     typeof(Enumerable).Assembly,
                     typeof(JsonNode).Assembly,
                     typeof(Globals).Assembly)
-                .AddImports(
-                    "System",
-                    "System.Linq",
-                    "System.Collections.Generic",
-                    "System.Text.Json",
-                    "System.Text.Json.Nodes",
-                    "N8n.CSharpRunner");
+                .AddImports(mergedImports);
 
             Script<object?> script;
             try
@@ -187,6 +203,259 @@ internal static class Program
         {
             Console.SetOut(originalOut);
         }
+    }
+
+    private static IReadOnlyList<string> MergeImports(IReadOnlyList<string> defaults, IReadOnlyList<string> headerImports)
+    {
+        var merged = new List<string>(capacity: defaults.Count + headerImports.Count);
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var item in defaults)
+        {
+            if (seen.Add(item))
+            {
+                merged.Add(item);
+            }
+        }
+
+        foreach (var item in headerImports)
+        {
+            if (seen.Add(item))
+            {
+                merged.Add(item);
+            }
+        }
+
+        return merged;
+    }
+
+    private static bool TryExtractHeaderUsingDirectives(
+        string code,
+        out IReadOnlyList<string> imports,
+        out RunnerError? error)
+    {
+        imports = Array.Empty<string>();
+        error = null;
+
+        var results = new List<string>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+
+        var inBlockComment = false;
+        var index = 0;
+
+        if (code.Length > 0 && code[0] == '\uFEFF')
+        {
+            index = 1;
+        }
+
+        while (index <= code.Length)
+        {
+            var lineStart = index;
+            var lineEnd = code.IndexOf('\n', lineStart);
+            if (lineEnd < 0)
+            {
+                lineEnd = code.Length;
+            }
+
+            var line = code.AsSpan(lineStart, lineEnd - lineStart);
+            if (line.Length > 0 && line[^1] == '\r')
+            {
+                line = line[..^1];
+            }
+
+            if (!TryProcessHeaderLine(line, ref inBlockComment, results, seen, out error))
+            {
+                if (error is not null)
+                {
+                    return false;
+                }
+
+                imports = results;
+                return true;
+            }
+
+            if (lineEnd >= code.Length)
+            {
+                break;
+            }
+
+            index = lineEnd + 1;
+        }
+
+        imports = results;
+        return true;
+    }
+
+    private static bool TryProcessHeaderLine(
+        ReadOnlySpan<char> line,
+        ref bool inBlockComment,
+        List<string> imports,
+        HashSet<string> seen,
+        out RunnerError? error)
+    {
+        error = null;
+        var position = 0;
+
+        while (true)
+        {
+            if (inBlockComment)
+            {
+                var endIdx = line.Slice(position).IndexOf("*/".AsSpan());
+                if (endIdx < 0)
+                {
+                    return true;
+                }
+
+                position += endIdx + 2;
+                inBlockComment = false;
+                continue;
+            }
+
+            while (position < line.Length && (line[position] == ' ' || line[position] == '\t'))
+            {
+                position++;
+            }
+
+            if (position >= line.Length)
+            {
+                return true;
+            }
+
+            if (line.Slice(position).StartsWith("//".AsSpan(), StringComparison.Ordinal))
+            {
+                var commentContent = line.Slice(position + 2);
+                while (commentContent.Length > 0 && (commentContent[0] == ' ' || commentContent[0] == '\t'))
+                {
+                    commentContent = commentContent[1..];
+                }
+
+                if (TryParseUsingDirective(commentContent, out var ns, out var detail))
+                {
+                    if (!seen.Add(ns))
+                    {
+                        return true;
+                    }
+
+                    imports.Add(ns);
+                    return true;
+                }
+
+                if (detail is not null)
+                {
+                    error = new RunnerError(
+                        "Invalid using directive syntax.",
+                        $"Line: '{line.ToString()}'. Expected: // using <Namespace>"
+                    );
+                    return false;
+                }
+
+                return true;
+            }
+
+            if (line.Slice(position).StartsWith("/*".AsSpan(), StringComparison.Ordinal))
+            {
+                inBlockComment = true;
+                position += 2;
+                continue;
+            }
+
+            if (line[position] == '#')
+            {
+                return true;
+            }
+
+            return false;
+        }
+    }
+
+    private static bool TryParseUsingDirective(ReadOnlySpan<char> commentContent, out string ns, out string? errorDetail)
+    {
+        ns = string.Empty;
+        errorDetail = null;
+
+        if (!commentContent.StartsWith("using".AsSpan(), StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        if (commentContent.Length > 5 && !char.IsWhiteSpace(commentContent[5]))
+        {
+            return false;
+        }
+
+        var remainder = commentContent.Length == 5
+            ? ReadOnlySpan<char>.Empty
+            : commentContent[5..];
+
+        remainder = remainder.Trim();
+        if (remainder.IsEmpty)
+        {
+            errorDetail = "Missing namespace.";
+            return false;
+        }
+
+        if (remainder.EndsWith(";".AsSpan(), StringComparison.Ordinal))
+        {
+            remainder = remainder[..^1].Trim();
+        }
+
+        if (remainder.IsEmpty)
+        {
+            errorDetail = "Missing namespace.";
+            return false;
+        }
+
+        if (!IsValidNamespaceToken(remainder))
+        {
+            errorDetail = "Invalid namespace token.";
+            return false;
+        }
+
+        ns = remainder.ToString();
+        return true;
+    }
+
+    private static bool IsValidNamespaceToken(ReadOnlySpan<char> token)
+    {
+        if (token.StartsWith("global::".AsSpan(), StringComparison.Ordinal))
+        {
+            token = token[8..];
+        }
+
+        if (token.IsEmpty)
+        {
+            return false;
+        }
+
+        var segmentStart = true;
+
+        for (var i = 0; i < token.Length; i++)
+        {
+            var c = token[i];
+
+            if (segmentStart)
+            {
+                if (!(char.IsLetter(c) || c == '_'))
+                {
+                    return false;
+                }
+                segmentStart = false;
+                continue;
+            }
+
+            if (c == '.')
+            {
+                segmentStart = true;
+                continue;
+            }
+
+            if (!(char.IsLetterOrDigit(c) || c == '_'))
+            {
+                return false;
+            }
+        }
+
+        return !segmentStart;
     }
 
     private static void AppendNormalized(List<JsonNode?> outputItems, object? result)

@@ -106,3 +106,24 @@ The runner adds extension helpers for `System.Text.Json.Nodes.JsonNode`:
 - `node.Bool("field")` → `bool?`
 
 These are added via Roslyn imports so user scripts can be concise.
+
+## Custom `using` directives (header comments)
+
+User scripts can add additional namespace imports by placing special header comments at the top of the script:
+
+```csharp
+// using System.Text
+// using global::System.Net
+```
+
+Rules:
+
+- Only namespace imports are supported (no `static`, no aliases).
+- The runner scans only the initial “header” region and stops at the first non-empty, non-comment line.
+- The header region may include empty lines, `//...` comments, `/* ... */` block comments, and `#...` directive lines.
+- Duplicate imports are removed.
+- Invalid `// using ...` syntax returns `{ "ok": false, "error": { ... } }`.
+
+Note:
+
+- These directives add Roslyn *imports* only; they do not add new assembly references. Some types may still require additional references to compile.
