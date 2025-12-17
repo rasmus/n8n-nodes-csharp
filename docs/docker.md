@@ -4,26 +4,21 @@ This repo includes Docker setup for local testing and for building an image that
 
 - n8n
 - the custom C# node
-- a working `dotnet` runtime for the runner
+- a working runner executable
 
-## Base image and ICU
+## Base image and globalization
 
 `n8nio/n8n:latest` is Alpine-based.
 
-.NET on Alpine typically requires ICU libraries for globalization support, so the Dockerfile installs:
+The Dockerfile publishes the runner as a **self-contained** Linux/musl executable and runs it with globalization-invariant mode (`DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1`), so ICU is not required.
 
-- `icu-libs`
+The image relies on what is already present in `n8nio/n8n:latest` (no additional `apk add` runtime dependencies).
 
-If ICU is missing, the runner may fail at runtime.
+Runner artifacts are placed under `runner/<rid>/` (for example `runner/linux-musl-x64/`), and the node auto-detects the correct runner on Linux.
 
-## `dotnet` availability
+## Runtime availability
 
-The C# node spawns the runner using the `dotnet` command.
-
-The Dockerfile ensures:
-
-- the .NET runtime exists in the image
-- `dotnet` is available on PATH (including a `/usr/bin/dotnet` symlink to avoid PATH quirks)
+With a self-contained runner publish, the final image does not need `dotnet` installed.
 
 ## Local dev
 

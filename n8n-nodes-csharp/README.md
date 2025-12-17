@@ -33,7 +33,7 @@ npm i @rasmus/n8n-nodes-csharp
 
 Then restart n8n.
 
-Note: the C# node also requires `dotnet` available at runtime, as it spawns a .NET runner process.
+Note: if you run a framework-dependent runner (`.dll`), the C# node requires `dotnet` available at runtime. If you use a self-contained runner executable, `dotnet` is not required.
 
 ## Quick install (generic npm)
 
@@ -47,7 +47,7 @@ npm i @rasmus/n8n-nodes-csharp
 ## How it works
 
 - Node UI + integration: TypeScript (`nodes/CSharpCode/CSharpCode.node.ts`)
-- C# execution: spawned `dotnet` runner (`runner/N8n.CSharpRunner.dll`)
+- C# execution: runner process (`runner/N8n.CSharpRunner` or `runner/N8n.CSharpRunner.dll`)
 
 The node sends input items + your script via stdin JSON and reads output items from stdout JSON.
 
@@ -106,8 +106,16 @@ return new object[] {
 
 Default location (relative to this package):
 
-- `runner/N8n.CSharpRunner.dll`
+- On Linux x64/arm64, the node auto-selects:
+	- `runner/linux-x64/N8n.CSharpRunner`
+	- `runner/linux-arm64/N8n.CSharpRunner`
+	- `runner/linux-musl-x64/N8n.CSharpRunner`
+	- `runner/linux-musl-arm64/N8n.CSharpRunner`
+
+Fallback (legacy layout):
+
+- `runner/N8n.CSharpRunner` or `runner/N8n.CSharpRunner.dll`
 
 Override via env var:
 
-- `N8N_CSHARP_RUNNER_PATH=/path/to/N8n.CSharpRunner.dll`
+- `N8N_CSHARP_RUNNER_PATH=/path/to/N8n.CSharpRunner` (executable) or `/path/to/N8n.CSharpRunner.dll`

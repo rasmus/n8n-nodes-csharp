@@ -256,15 +256,23 @@ More examples and details live in `n8n-nodes-csharp/README.md`.
 ## What’s in this repo
 
 - `n8n-nodes-csharp/` — n8n community node package (TypeScript)
-- `runner/N8n.CSharpRunner/` — .NET runner (C#) invoked by the node via `dotnet`
+- `runner/N8n.CSharpRunner/` — .NET runner (C#) invoked by the node as a separate process
 
 The node owns the n8n UI + framework integration. It executes C# in a **separate `dotnet` process**.
+
+For published releases, the npm package includes self-contained runner executables for Linux (glibc + musl, x64 + arm64), and the node auto-selects the correct one at runtime.
 
 ## Build locally
 
 1) Publish the runner into the node package:
 
+Framework-dependent (requires `dotnet` installed at runtime):
+
 `dotnet publish runner/N8n.CSharpRunner -c Release -o n8n-nodes-csharp/runner`
+
+Self-contained for Alpine (no `dotnet` at runtime):
+
+`dotnet publish runner/N8n.CSharpRunner -c Release -r linux-musl-x64 --self-contained true -o n8n-nodes-csharp/runner`
 
 2) Build the node package:
 
@@ -288,8 +296,7 @@ docker compose up -d --build
 
 Notes:
 
-- `n8nio/n8n:latest` is Alpine-based; the Dockerfile installs `icu-libs` for .NET globalization support.
-- The image provides `/usr/bin/dotnet` to avoid PATH quirks.
+- `n8nio/n8n:latest` is Alpine-based; the Dockerfile uses a self-contained Linux/musl runner and runs it in globalization-invariant mode.
 
 ## License
 

@@ -35,8 +35,8 @@ jobs:
       - name: Build runner
         run: dotnet build runner/N8n.CSharpRunner -c Release
 
-      - name: Publish runner into npm package
-        run: dotnet publish runner/N8n.CSharpRunner -c Release -o n8n-nodes-csharp/runner
+      - name: Publish runner into npm package (multi-RID, self-contained)
+        run: node scripts/publish-runner-multi-rid.mjs
 
       - name: Test runner
         run: dotnet test runner/N8n.CSharpRunner.Tests -c Release

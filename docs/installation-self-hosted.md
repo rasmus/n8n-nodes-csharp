@@ -29,10 +29,15 @@ Do not commit this token.
 
 ### 2) `dotnet` available at runtime
 
-The node spawns a runner via `dotnet <runner.dll>`.
+The node spawns the runner either as:
 
-- If you use this repository’s Docker image setup, `dotnet` is already included.
-- If you run the stock `n8nio/n8n` image, you must build a custom image that includes the .NET runtime.
+- `dotnet <runner.dll>` (framework-dependent), or
+- `<runner executable>` (self-contained publish)
+
+The published npm package includes self-contained runner executables for Linux (glibc + musl, x64 + arm64). In most Docker-based self-hosted setups, no extra `dotnet` runtime install is needed.
+
+- If you use this repository’s Docker image setup, the runner is self-contained and `dotnet` is not required.
+- If you run the stock `n8nio/n8n` image, you must either add the .NET runtime or override the runner path to a self-contained runner executable.
 
 ## Install (Docker)
 
@@ -96,4 +101,5 @@ By default, the node uses the runner shipped inside the npm package.
 
 To override (for example, to point at a custom runner build), set:
 
-- `N8N_CSHARP_RUNNER_PATH=/absolute/path/to/N8n.CSharpRunner.dll`
+- `N8N_CSHARP_RUNNER_PATH=/absolute/path/to/N8n.CSharpRunner` (executable)
+- `N8N_CSHARP_RUNNER_PATH=/absolute/path/to/N8n.CSharpRunner.dll` (requires `dotnet`)

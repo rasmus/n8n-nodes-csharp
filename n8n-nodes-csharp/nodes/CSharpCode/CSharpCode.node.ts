@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 import type {
@@ -138,7 +139,61 @@ function resolveRunnerPath(): string {
     return process.env.N8N_CSHARP_RUNNER_PATH;
   }
 
-  return path.join(__dirname, '..', '..', '..', 'runner', 'N8n.CSharpRunner.dll');
+  const runnerDir = path.join(__dirname, '..', '..', '..', 'runner');
+
+  // New layout: ship multiple self-contained runner builds under runner/<rid>/.
+  // This enables running on both glibc and musl containers and on x64/arm64.
+  const rid = detectLinuxRid();
+  if (rid) {
+    const exeName = process.platform === 'win32' ? 'N8n.CSharpRunner.exe' : 'N8n.CSharpRunner';
+    const ridExe = path.join(runnerDir, rid, exeName);
+    if (fs.existsSync(ridExe)) return ridExe;
+  }
+
+  // Prefer an executable runner if shipped alongside the package.
+  // This enables using self-contained publishes (no `dotnet` required at runtime).
+  const candidates = [
+    path.join(runnerDir, 'N8n.CSharpRunner'),
+    path.join(runnerDir, 'N8n.CSharpRunner.exe'),
+    path.join(runnerDir, 'N8n.CSharpRunner.dll'),
+  ];
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
+
+  // Fallback to the historical default for clearer error messages.
+  return candidates[candidates.length - 1];
+}
+
+function detectLinuxRid(): string | null {
+  if (process.platform !== 'linux') return null;
+
+  const arch = process.arch;
+  if (arch !== 'x64' && arch !== 'arm64') return null;
+
+  const isMusl = detectMusl(arch);
+  return isMusl ? `linux-musl-${arch}` : `linux-${arch}`;
+}
+
+function detectMusl(arch: 'x64' | 'arm64'): boolean {
+  // Heuristic 1: Node's process.report includes glibc runtime version when running on glibc.
+  // If present, we assume glibc.
+  try {
+    const report = (process as any).report?.getReport?.();
+    const glibcVersion = report?.header?.glibcVersionRuntime;
+    if (typeof glibcVersion === 'string' && glibcVersion.length > 0) return false;
+  } catch {
+    // ignore
+  }
+
+  // Heuristic 2: musl loader exists in typical Alpine paths.
+  const muslLoader =
+    arch === 'x64' ? '/lib/ld-musl-x86_64.so.1' : '/lib/ld-musl-aarch64.so.1';
+  if (fs.existsSync(muslLoader)) return true;
+
+  // Default to glibc if uncertain.
+  return false;
 }
 
 async function runDotnetRunner(options: {
@@ -148,12 +203,17 @@ async function runDotnetRunner(options: {
 }): Promise<string> {
   const { runnerPath, payload, timeoutMs } = options;
 
-  const child = spawn('dotnet', [runnerPath], {
+  const { command, args } = resolveRunnerCommand(runnerPath);
+
+  const child = spawn(command, args, {
     stdio: ['pipe', 'pipe', 'pipe'],
     env: {
       ...process.env,
       DOTNET_CLI_TELEMETRY_OPTOUT: '1',
       DOTNET_NOLOGO: '1',
+      // Avoid ICU/globalization dependency in minimal containers (e.g. Alpine).
+      // Safe to set even when ICU is present.
+      DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: '1',
     },
   });
 
@@ -195,6 +255,16 @@ async function runDotnetRunner(options: {
   }
 
   return out;
+}
+
+function resolveRunnerCommand(runnerPath: string): { command: string; args: string[] } {
+  // Backwards compatible: default runner is a framework-dependent DLL.
+  if (runnerPath.toLowerCase().endsWith('.dll')) {
+    return { command: 'dotnet', args: [runnerPath] };
+  }
+
+  // Self-contained publish (or apphost) executable.
+  return { command: runnerPath, args: [] };
 }
 
 function coerceToJsonObject(value: unknown): IDataObject {

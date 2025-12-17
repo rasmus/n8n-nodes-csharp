@@ -9,6 +9,8 @@ This repo provides an n8n community node that runs user-provided C# scripts.
 
 The node **does not** execute C# in-process. It spawns a separate `dotnet` process and exchanges data using JSON over stdin/stdout.
 
+The runner is shipped as **self-contained executables** for common Linux environments (glibc + musl, x64 + arm64). The node detects the runtime and spawns the matching executable directly.
+
 ## Components
 
 ### n8n node (TypeScript)
@@ -20,7 +22,9 @@ The node **does not** execute C# in-process. It spawns a separate `dotnet` proce
 Runner path resolution:
 
 - If `N8N_CSHARP_RUNNER_PATH` is set, the node uses it.
-- Otherwise it uses the runner shipped inside the npm package: `runner/N8n.CSharpRunner.dll`.
+- Otherwise it uses the runner shipped inside the npm package:
+  - On Linux x64/arm64: prefers `runner/<rid>/N8n.CSharpRunner` (auto-detected between `linux-*` and `linux-musl-*`)
+  - Fallback: `runner/N8n.CSharpRunner` / `runner/N8n.CSharpRunner.dll`
 
 ### .NET runner (C#)
 
