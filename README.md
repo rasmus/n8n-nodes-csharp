@@ -2,7 +2,7 @@
 
 Run C# inside n8n workflows, similar to n8n’s built-in Code nodes.
 
-This is intended for **self-hosted** n8n (Docker). The node executes your script in a separate `.NET` runner process (spawned via `dotnet`) and exchanges data as JSON over stdin/stdout.
+This is intended for **self-hosted** n8n (Docker). The node executes your script in a separate `.NET` runner process and exchanges data as JSON over stdin/stdout.
 
 ## Quick start (Docker)
 
@@ -44,12 +44,22 @@ Important notes for this project:
 - For GitHub Packages (npm) this is usually a Personal Access Token (PAT) with `read:packages`.
 - If your org/repo settings require it, you may also need repository read access for the private repo.
 
-2) `dotnet` available at runtime
+2) Runner availability at runtime
 
-The node spawns a `.NET` runner using `dotnet`. Your n8n host/container must have a working `dotnet` runtime on `PATH`.
+On Linux x64/arm64, published releases ship self-contained runner executables inside the npm package, so `dotnet` is not required by default.
 
-- If you use this repo’s [Dockerfile.n8n-csharp](Dockerfile.n8n-csharp), `dotnet` is already included.
-- If you use the stock `n8nio/n8n` image, you must build your own image that installs/copies `dotnet`.
+If you override `N8N_CSHARP_RUNNER_PATH` to point at a `.dll`, then the runtime must have `dotnet` available on `PATH`.
+
+## Supported platforms
+
+The npm package includes prebuilt self-contained runners for:
+
+- Linux (glibc): `linux-x64`, `linux-arm64`
+- Linux (musl/Alpine): `linux-musl-x64`, `linux-musl-arm64`
+
+The node auto-detects architecture (x64/arm64) and libc (glibc vs musl) on Linux and picks the matching runner.
+
+For other platforms, provide a custom runner and set `N8N_CSHARP_RUNNER_PATH`.
 
 ### Install (Docker)
 
@@ -207,7 +217,8 @@ npm view @rasmus/n8n-nodes-csharp@0.1.1 version
 
 - Only the npm package is published (not a container image)
 - The npm package includes the compiled .NET runner under `runner/` so the node works “out of the box” after install
-- At runtime, n8n still needs `dotnet` available on the PATH (the provided Dockerfile/compose setup includes it)
+- On Linux x64/arm64 (glibc/musl), the npm package ships self-contained runner executables, so `dotnet` is not required by default
+- If you override the runner path to a `.dll`, then `dotnet` must be available on PATH
 
 ## Using the C# Code node
 
@@ -258,7 +269,7 @@ More examples and details live in `n8n-nodes-csharp/README.md`.
 - `n8n-nodes-csharp/` — n8n community node package (TypeScript)
 - `runner/N8n.CSharpRunner/` — .NET runner (C#) invoked by the node as a separate process
 
-The node owns the n8n UI + framework integration. It executes C# in a **separate `dotnet` process**.
+The node owns the n8n UI + framework integration. It executes C# in a **separate runner process**.
 
 For published releases, the npm package includes self-contained runner executables for Linux (glibc + musl, x64 + arm64), and the node auto-selects the correct one at runtime.
 
@@ -266,13 +277,13 @@ For published releases, the npm package includes self-contained runner executabl
 
 1) Publish the runner into the node package:
 
-Framework-dependent (requires `dotnet` installed at runtime):
+Release-like (builds all Linux variants into `n8n-nodes-csharp/runner/<rid>/`):
 
-`dotnet publish runner/N8n.CSharpRunner -c Release -o n8n-nodes-csharp/runner`
+`node scripts/publish-runner-multi-rid.mjs`
 
-Self-contained for Alpine (no `dotnet` at runtime):
+Or build a single self-contained runner for your target (example for Alpine x64):
 
-`dotnet publish runner/N8n.CSharpRunner -c Release -r linux-musl-x64 --self-contained true -o n8n-nodes-csharp/runner`
+`dotnet publish runner/N8n.CSharpRunner -c Release -r linux-musl-x64 --self-contained true -o n8n-nodes-csharp/runner/linux-musl-x64`
 
 2) Build the node package:
 

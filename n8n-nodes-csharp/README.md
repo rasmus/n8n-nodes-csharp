@@ -35,6 +35,17 @@ Then restart n8n.
 
 Note: if you run a framework-dependent runner (`.dll`), the C# node requires `dotnet` available at runtime. If you use a self-contained runner executable, `dotnet` is not required.
 
+## Supported platforms
+
+This package bundles self-contained runner executables for:
+
+- Linux (glibc): `linux-x64`, `linux-arm64`
+- Linux (musl/Alpine): `linux-musl-x64`, `linux-musl-arm64`
+
+On Linux x64/arm64, the node auto-detects libc (glibc vs musl) and selects the matching runner under `runner/<rid>/`.
+
+On other platforms, set `N8N_CSHARP_RUNNER_PATH` to a custom runner (executable or `.dll`).
+
 ## Quick install (generic npm)
 
 Install (requires npm configured for GitHub Packages):
