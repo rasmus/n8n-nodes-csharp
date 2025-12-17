@@ -2,38 +2,15 @@
 
 Community node package for n8n providing a **C# Code** node.
 
-Published to GitHub Packages as `@rasmus/n8n-nodes-csharp`.
+Published to GitHub Packages as `@rasmus/n8n-nodes-csharp` and `@madoere/n8n-nodes-csharp` on the official [NPM registry](https://www.npmjs.com/package/@madoere/n8n-nodes-csharp).
 
 ## Install in self-hosted n8n (manual install)
 
-Follow n8n’s official manual install guide:
+Follow n8n’s official GUI or manual install guide:
 
 ```text
-https://docs.n8n.io/integrations/community-nodes/installation/manual-install/
+https://docs.n8n.io/integrations/community-nodes/installation/
 ```
-
-Important for this package:
-
-- The repository + GitHub Packages registry are private (not public).
-- You must authenticate npm to `npm.pkg.github.com` to install this package.
-
-Example (Docker):
-
-```bash
-docker exec -it n8n sh
-
-mkdir -p ~/.n8n/nodes
-cd ~/.n8n/nodes
-
-npm config set @rasmus:registry https://npm.pkg.github.com
-npm config set //npm.pkg.github.com/:_authToken "<YOUR_GITHUB_TOKEN>"
-
-npm i @rasmus/n8n-nodes-csharp
-```
-
-Then restart n8n.
-
-Note: if you run a framework-dependent runner (`.dll`), the C# node requires `dotnet` available at runtime. If you use a self-contained runner executable, `dotnet` is not required.
 
 ## Supported platforms
 
@@ -45,15 +22,6 @@ This package bundles self-contained runner executables for:
 On Linux x64/arm64, the node auto-detects libc (glibc vs musl) and selects the matching runner under `runner/<rid>/`.
 
 On other platforms, set `N8N_CSHARP_RUNNER_PATH` to a custom runner (executable or `.dll`).
-
-## Quick install (generic npm)
-
-Install (requires npm configured for GitHub Packages):
-
-```bash
-npm config set @rasmus:registry https://npm.pkg.github.com
-npm i @rasmus/n8n-nodes-csharp
-```
 
 ## How it works
 
