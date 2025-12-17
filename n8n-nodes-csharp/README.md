@@ -2,6 +2,17 @@
 
 Community node package for n8n providing a **C# Code** node.
 
+## Security / sandboxing
+
+This node executes **user-provided C# code with no sandboxing**.
+
+Treat access to this node as equivalent to granting arbitrary code execution on the machine/container running n8n:
+
+- The script can read/write files accessible to the n8n process, call the network, and consume CPU/memory.
+- There are no built-in isolation guarantees, permissions, or resource limits beyond what your OS/container provides.
+
+Only use this node in trusted environments (trusted workflows + trusted users), and rely on external isolation/hardening (separate instance, container/VM boundaries, least-privilege filesystem/networking, etc.).
+
 Published to GitHub Packages as `@rasmus/n8n-nodes-csharp` and `@madoere/n8n-nodes-csharp` on the official [NPM registry](https://www.npmjs.com/package/@madoere/n8n-nodes-csharp).
 
 ## Install in self-hosted n8n (manual install)
