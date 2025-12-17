@@ -5,7 +5,7 @@ These instructions are for GitHub Copilot working in this repository.
 ## Project summary
 
 - This repo provides an n8n community node that runs user-provided C# scripts.
-- C# execution happens out-of-process via a .NET runner (`dotnet <runner.dll>`).
+- C# execution happens out-of-process via a .NET runner process (self-contained executable by default on Linux; `dotnet <runner.dll>` when using a DLL runner).
 - The npm package is published to GitHub Packages and includes the compiled runner artifacts.
 - GitHub Packages access is private (not public). Installation docs must reflect private registry authentication.
 
@@ -14,7 +14,7 @@ These instructions are for GitHub Copilot working in this repository.
 1) Do not embed CLR in-process
 
 - Do not propose or implement in-process CLR hosting (e.g., edge-style embedding).
-- Keep execution as a spawned `dotnet` runner process.
+- Keep execution as a spawned runner process (either executable runner or `dotnet <runner.dll>`).
 
 2) Runner stdout must be JSON-only
 

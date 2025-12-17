@@ -11,7 +11,6 @@ services:
       - N8N_PROTOCOL=http
       - WEBHOOK_URL=http://localhost:5678/
       - N8N_CUSTOM_EXTENSIONS=/opt/n8n-custom
-      - N8N_CSHARP_RUNNER_PATH=/opt/n8n-custom/n8n-nodes-csharp/runner/N8n.CSharpRunner.dll
       # For local dev only. Change for any real environment.
       - N8N_ENCRYPTION_KEY=local-dev-only-change-me
     volumes:
