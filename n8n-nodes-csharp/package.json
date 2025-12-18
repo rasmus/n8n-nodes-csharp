@@ -23,6 +23,7 @@
     "build": "tsc -p tsconfig.json && node scripts/copy-assets.mjs",
     "dev": "npm run build -- --watch",
     "test": "npm run build && node --test test/**/*.test.js",
+    "prepack": "node scripts/copy-package-docs.mjs",
     "clean": "rm -rf dist"
   },
   "n8n": {

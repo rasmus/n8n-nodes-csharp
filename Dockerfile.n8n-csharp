@@ -33,7 +33,6 @@ USER root
 # Copy built node package (dist + metadata)
 WORKDIR /opt/n8n-custom/n8n-nodes-csharp
 COPY --from=node-build /work/n8n-nodes-csharp/package.json ./
-COPY --from=node-build /work/n8n-nodes-csharp/README.md ./
 COPY --from=node-build /work/n8n-nodes-csharp/dist ./dist
 
 # Copy published runner artifacts into the node package
