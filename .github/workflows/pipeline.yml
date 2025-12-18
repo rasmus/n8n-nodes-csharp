@@ -3,10 +3,6 @@ name: Pipeline
 on:
   workflow_call:
     inputs:
-      version:
-        description: Version string used for tagging build artifacts
-        required: true
-        type: string
       doRelease:
         description: Whether to publish release artifacts to npmjs
         required: false
@@ -26,6 +22,7 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: n8n-nodes-csharp/package-lock.json
+          registry-url: https://registry.npmjs.org
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -58,22 +55,7 @@ jobs:
             -t n8n-csharp-ci:local \
             .
 
-      - name: Setup Node.js (npmjs)
-        if: inputs.doRelease
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          registry-url: https://registry.npmjs.org
-          always-auth: true
-
-      - name: Set npm package version
-        if: inputs.doRelease
-        working-directory: n8n-nodes-csharp
-        run: npm version --no-git-tag-version --allow-same-version "${{ inputs.version }}"
-
       - name: Publish npm package to npmjs
         if: inputs.doRelease
         working-directory: n8n-nodes-csharp
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --access public
