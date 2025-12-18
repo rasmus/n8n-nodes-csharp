@@ -36,14 +36,10 @@ Fix:
 
 - The runner deep-clones nodes during normalization before wrapping/returning them.
 
-## Private GitHub Packages install failures
+## Install failures
 
-Common causes:
+If the node doesn’t show up after installing, or `npm i` fails in a manual install:
 
-- Missing npm auth token for `npm.pkg.github.com`.
-- Token lacks `read:packages`.
-- Org/repo requires additional permissions for private packages.
-
-Recommended approach:
-
-- Configure `@rasmus` registry and auth token inside the container before `npm i`.
+- Ensure community nodes are enabled in your n8n deployment (see n8n docs).
+- Ensure you installed the correct module name: `@madoere/n8n-nodes-csharp`.
+- Restart n8n after install.

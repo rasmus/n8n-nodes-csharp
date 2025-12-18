@@ -1,6 +1,11 @@
 # Releasing
 
-Releases publish the npm package to GitHub Packages.
+Releases publish the npm package to the public npm registry (npmjs).
+
+## Prerequisites
+
+- GitHub Actions must have an `NPM_TOKEN` secret with permission to publish `@madoere/n8n-nodes-csharp`.
+- Scoped packages on npmjs must be published as public (CI uses `npm publish --access public`).
 
 ## Rules (enforced by CI)
 
@@ -51,7 +56,7 @@ git push origin v0.1.1
 6) Verify publish
 
 - Check the GitHub Actions “Release” workflow run.
-- Confirm the package appears under GitHub Packages as `@rasmus/n8n-nodes-csharp@0.1.1`.
+- Confirm the package appears on npmjs as `@madoere/n8n-nodes-csharp@0.1.1`.
 
 ## What gets published
 
