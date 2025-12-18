@@ -11,7 +11,6 @@ permissions:
 
 jobs:
   pipeline:
-    needs: prepare
     uses: ./.github/workflows/pipeline.yml
     with:
       doRelease: false
