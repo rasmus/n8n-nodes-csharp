@@ -6,8 +6,7 @@ These instructions are for GitHub Copilot working in this repository.
 
 - This repo provides an n8n community node that runs user-provided C# scripts.
 - C# execution happens out-of-process via a .NET runner process (self-contained executable by default on Linux; `dotnet <runner.dll>` when using a DLL runner).
-- The npm package is published to GitHub Packages and includes the compiled runner artifacts.
-- GitHub Packages access is private (not public). Installation docs must reflect private registry authentication.
+- The npm package is published to the public npm registry (npmjs) and includes the compiled runner artifacts.
 
 ## Golden rules (do not violate)
 
@@ -23,7 +22,7 @@ These instructions are for GitHub Copilot working in this repository.
 
 3) Releases publish npm only
 
-- Only publish the npm package to GitHub Packages.
+- Only publish the npm package to npmjs.
 - Do not add Docker image publishing to the release pipeline.
 - Release is gated:
   - branch must be `release`
@@ -32,7 +31,7 @@ These instructions are for GitHub Copilot working in this repository.
 
 4) Keep private registry constraints in mind
 
-- Documentation and install flows must assume the GitHub Packages npm registry is private.
+- Documentation and install flows must assume the public npm registry.
 - Never hard-code or commit tokens.
 
 ## Where the truth lives
@@ -41,7 +40,7 @@ Start here before changing behavior:
 
 - `docs/architecture.md` (runtime behavior + JSON contract)
 - `docs/releasing.md` (release rules and steps)
-- `docs/installation-self-hosted.md` (manual install + private registry)
+- `docs/installation-self-hosted.md` (manual install)
 - Root `README.md` (top-level usage)
 
 ## Implementation details to preserve

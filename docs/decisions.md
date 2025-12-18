@@ -58,9 +58,9 @@ Why:
 
 Decision:
 
-- Publish only the npm package to GitHub Packages.
+- Publish only the npm package to npmjs.
 
 Why:
 
 - This repo’s distribution model is an n8n node package.
-- Docker images are for local testing and are not part of the GitHub Packages release output.
+- Docker images are for local testing and are not part of the npm release output.

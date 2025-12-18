@@ -1,33 +1,22 @@
-# Self-hosted installation (manual install)
+# Self-hosted installation
 
-This project is meant for self-hosted n8n.
+The recommended approach is installing via the n8n UI (Community nodes), using the public npm registry.
 
-The recommended approach is **manual install** (inside the n8n container), following the official n8n guide:
+Module name:
 
-https://docs.n8n.io/integrations/community-nodes/installation/manual-install/
+```text
+@madoere/n8n-nodes-csharp
+```
 
-## Important: private GitHub Packages registry
+n8n docs (Community nodes):
 
-This repository (and the GitHub Packages npm registry for it) is private.
+https://docs.n8n.io/integrations/community-nodes/
 
-That means:
-
-- You must authenticate npm to `npm.pkg.github.com`.
-- UI-based install flows that assume the public npm registry may not work.
+This page keeps the manual install steps for environments where UI-based install isn’t available.
 
 ## Prerequisites
 
-### 1) A GitHub token that can read packages
-
-Typically you’ll use a GitHub Personal Access Token (PAT) with:
-
-- `read:packages`
-
-Depending on your org/repo settings, you may also need repository read access.
-
-Do not commit this token.
-
-### 2) `dotnet` available at runtime
+### `dotnet` available at runtime (sometimes)
 
 The node spawns the runner either as:
 
@@ -54,25 +43,13 @@ mkdir -p ~/.n8n/nodes
 cd ~/.n8n/nodes
 ```
 
-3) Configure the registry for the `@rasmus` scope:
+3) Install the node package:
 
 ```bash
-npm config set @rasmus:registry https://npm.pkg.github.com
+npm i @madoere/n8n-nodes-csharp
 ```
 
-4) Authenticate npm to GitHub Packages (writes to `~/.npmrc` in the container):
-
-```bash
-npm config set //npm.pkg.github.com/:_authToken "<YOUR_GITHUB_TOKEN>"
-```
-
-5) Install the node package:
-
-```bash
-npm i @rasmus/n8n-nodes-csharp
-```
-
-6) Restart n8n (example for docker compose):
+4) Restart n8n (example for docker compose):
 
 ```bash
 exit
@@ -84,7 +61,7 @@ docker compose restart
 ```bash
 docker exec -it n8n sh
 cd ~/.n8n/nodes
-npm update @rasmus/n8n-nodes-csharp
+npm update @madoere/n8n-nodes-csharp
 ```
 
 ## Uninstall
@@ -92,7 +69,7 @@ npm update @rasmus/n8n-nodes-csharp
 ```bash
 docker exec -it n8n sh
 cd ~/.n8n/nodes
-npm uninstall @rasmus/n8n-nodes-csharp
+npm uninstall @madoere/n8n-nodes-csharp
 ```
 
 ## Runner path override (optional)
