@@ -14,5 +14,4 @@ jobs:
   pipeline:
     uses: ./.github/workflows/pipeline.yml
     with:
-      version: ${{ github.ref_name }}
       doRelease: true
