@@ -1,6 +1,6 @@
 {
   "name": "@madoere/n8n-nodes-csharp",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "n8n community node: C# Code",
   "homepage": "https://github.com/rasmus/n8n-nodes-csharp",
   "keywords": [
